@@ -1,8 +1,5 @@
 # Early Testing Suite
 
-> [!TIP]
-> Report of the last test run can be viewed [here](./report.md).
-
 Welcome to the documentation on Early Testing Suite.
 
 Early Testing Suite provides a unit testing framework for Early
@@ -12,6 +9,9 @@ What do we test using this tool?
 - Desired layout of the score output,
 - Correct scheme structure of the Early "smobs"
 - Coverage of MEI standard and Early-to-MEI converter correct results.
+
+> [!IMPORTANT]
+> The final outcome of the test is ignored in this repository and will be integrated later within the github actions.
 
 ## "Testing suite" and "unit tests".
 
