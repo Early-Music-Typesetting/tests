@@ -1,0 +1,5 @@
+{
+  "lilypond": "2.24.4",
+  "mei_mensural": "https://music-encoding.org/schema/5.1/mei-Mensural.rng",
+  "early": "0.0.0"
+}
