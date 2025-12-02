@@ -1,8 +1,17 @@
 import json
 import pathlib as p
 import subprocess
+import sys
 
 from utils import TestCase, TestSuiteConfig
+
+ARGS = sys.argv
+SUITE = None
+TESTS = []
+if len(ARGS) >= 2:
+    SUITE = ARGS[1]
+if len(ARGS) > 2:
+    TESTS = ARGS[2:]
 
 DIR = p.Path("./tests/suites")
 FORMAT = "svg"
@@ -10,6 +19,7 @@ FORMAT = "svg"
 LY_PAPER = r"""
 \include "lilypond-book-preamble.ly"
 % (set-default-paper-size '(cons (* 100 mm) (* 20 mm)))
+#(ly:set-option 'warning-as-error #t)
 \paper {
     page-breaking = #ly:one-line-breaking
     indent=0\mm
@@ -35,8 +45,11 @@ if __name__ == "__main__":
         if not suite_dir.is_dir() or suite_dir.stem.startswith("__"):
             continue
         suite_name = suite_dir.stem
+        if SUITE and SUITE != suite_name:
+            continue
         md += f"\n# {suite_name.capitalize()}\n\n"
         config = TestSuiteConfig(**json.loads((suite_dir / "config.json").read_text()))
+        macra = (suite_dir / "macra.ly").read_text()
 
         for k, v in config.__dict__.items():
             md += f"* {k}: {v}\n"
@@ -48,7 +61,10 @@ if __name__ == "__main__":
             subprocess.run(["rm", "-r", str(test_dir / "output")])
             output_dir = (test_dir / "output").mkdir(parents=True, exist_ok=True)
             test_name = test_dir.stem
+            if test_name not in TESTS:
+                continue
             title = f"\n## {' '.join(test_name.capitalize().split('-'))}\n"
+            print(f"Testing {test_name} in {suite_name}")
 
             scm_expected = (test_dir / "expect.scm").read_text() or "_no scheme_"
             mei_expected = (test_dir / "expect.mei").read_text() or "_no mei_"
@@ -57,7 +73,8 @@ if __name__ == "__main__":
             output_early_dir = test_dir / "output" / "early"
             # output_mei_dir = test_dir / "output" / "mei"
 
-            lilypond = f'\\version "{config.lilypond}"'
+            lilypond = f'\\version "{config.lilypond}"\n'
+            # lilypond += macra
             lilypond += LY_PAPER
             lilypond += (test_dir / "expect.ly").read_text()
             lilypond += r"\bookpart { \expected }"
@@ -87,6 +104,7 @@ if __name__ == "__main__":
 
             early = f'\\version "{config.lilypond}"'
             early = f'\\include "releases/early-{config.early}.ly"'
+            # early += macra
             early += LY_PAPER
             early += (test_dir / "early.ly").read_text()
             early += r"\bookpart { \actual }" + "\n"

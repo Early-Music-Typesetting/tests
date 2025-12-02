@@ -17,8 +17,8 @@ if __name__ == "__main__":
     if not suite_dir.is_dir():
         suite_dir.mkdir(parents=True, exist_ok=True)
         config = (DIR.parent / "src/config.json").read_text()
-        print("KURWAAAA", config)
         (suite_dir / "config.json").write_text(config)
+        (suite_dir / "macra.ly").write_text("")
 
     tests = sys.argv[2:]
 
@@ -40,4 +40,4 @@ if __name__ == "__main__":
         """
         Create tested case of early snippet.
         """
-        (test_dir / "early.ly").write_text("actual = \\early \\relative g' {}\n")
+        (test_dir / "early.ly").write_text("actual = \\early \\relative b'' { b a g}\n")
