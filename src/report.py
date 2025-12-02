@@ -59,7 +59,8 @@ if __name__ == "__main__":
             if not test_dir.is_dir():
                 continue
             subprocess.run(["rm", "-r", str(test_dir / "output")])
-            output_dir = (test_dir / "output").mkdir(parents=True, exist_ok=True)
+            output_dir = test_dir / "output"
+            output_dir.mkdir(parents=True, exist_ok=True)
             test_name = test_dir.stem
             if test_name not in TESTS:
                 continue
@@ -99,12 +100,13 @@ if __name__ == "__main__":
                 )
                 ...  # handle.
 
-            ly_img_path = f"{p.Path(*output_ly_dir.parts[1:])}.{FORMAT}"
-            ly_img = f'<img src="{ly_img_path}" width="100">'
-
             early = f'\\version "{config.lilypond}"'
-            early = f'\\include "releases/early-{config.early}.ly"'
-            # early += macra
+            early = (
+                f'\\include "releases/early-{config.early}.ly"'
+                if config.early
+                else r'\include "early/early.ly"'
+            )
+            early += (suite_dir / "macra.ly").read_text()
             early += LY_PAPER
             early += (test_dir / "early.ly").read_text()
             early += r"\bookpart { \actual }" + "\n"
@@ -135,8 +137,17 @@ if __name__ == "__main__":
 
             scm_actual, mei_actual = early_out.stdout.decode("utf-8").split("\n\n")
 
-            early_img_path = f"{p.Path(*output_early_dir.parts[1:])}.{FORMAT}"
-            early_img = f'<img src="{early_img_path}" width="100">'
+            ly_img = ""
+            early_img = ""
+            for img_dir in output_dir.iterdir():
+                if img_dir.suffix[1:] != FORMAT:
+                    continue
+                elif img_dir.stem.startswith("ly"):
+                    ly_img_path = p.Path(*img_dir.parts[1:])
+                    ly_img += f'<img src="{ly_img_path}" width="250">\n'
+                elif img_dir.stem.startswith("early"):
+                    early_img_path = p.Path(*img_dir.parts[1:])
+                    early_img += f'<img src="{early_img_path}" width="250">\n'
 
             test = TestCase()
             test.add("lilypond", ly_img, early_img)
