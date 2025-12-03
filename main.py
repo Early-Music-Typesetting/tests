@@ -2,13 +2,12 @@ import pathlib as p
 import subprocess
 
 if __name__ == "__main__":
-    print("\n🌺 Welcome to Early Testing Suite.\n")
-
     if not p.Path("./tests/main.py").is_file():
         print("NOTE: run this script from the top directory of your Early project.")
         exit()
 
     while True:
+        print("\n🌺 Welcome to Early Testing Suite.\n")
         print("* type 'add' followed by suite-name and test name (or many test names);")
         print(
             "* type 'test' (and optional suite and tests names) to generate a report of your test outcome."
@@ -37,6 +36,8 @@ if __name__ == "__main__":
             continue
 
         elif inp.startswith("test"):
+            subprocess.run(["clear"])
+            print("...running early tests.")
             args = inp.split(" ")
             suite_name = None
             tests = []
@@ -53,6 +54,8 @@ if __name__ == "__main__":
                 capture_output=True,
             )
             print(o.stdout.decode("utf-8"))
+            print(o.stderr.decode("utf-8"))
+
             if o.returncode == 0:
                 print(
                     "Successfully generated report. To exit press 'control+c' (unix only).\n"
