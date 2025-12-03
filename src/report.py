@@ -8,7 +8,7 @@ from utils import TestCase, TestSuiteConfig
 ARGS = sys.argv
 SUITE = None
 TESTS = []
-if len(ARGS) >= 2:
+if len(ARGS) >= 2 and ARGS[1]:
     SUITE = ARGS[1]
 if len(ARGS) > 2:
     TESTS = ARGS[2:]
@@ -37,7 +37,6 @@ LY_PAPER = r"""
 }
 """
 
-
 if __name__ == "__main__":
     md = ""
 
@@ -50,6 +49,7 @@ if __name__ == "__main__":
         md += f"\n# {suite_name.capitalize()}\n\n"
         config = TestSuiteConfig(**json.loads((suite_dir / "config.json").read_text()))
         macra = (suite_dir / "macra.ly").read_text()
+        extractors = (DIR / "../src/extractors.ly").read_text()
 
         for k, v in config.__dict__.items():
             md += f"* {k}: {v}\n"
@@ -62,10 +62,15 @@ if __name__ == "__main__":
             output_dir = test_dir / "output"
             output_dir.mkdir(parents=True, exist_ok=True)
             test_name = test_dir.stem
-            if test_name not in TESTS:
+            if TESTS and test_name not in TESTS:
                 continue
             title = f"\n## {' '.join(test_name.capitalize().split('-'))}\n"
             print(f"Testing {test_name} in {suite_name}")
+            output = (
+                (suite_dir / "output.ly").read_text()
+                if (suite_dir / "output.ly").is_file()
+                else ""
+            )
 
             scm_expected = (test_dir / "expect.scm").read_text() or "_no scheme_"
             mei_expected = (test_dir / "expect.mei").read_text() or "_no mei_"
@@ -76,6 +81,8 @@ if __name__ == "__main__":
 
             lilypond = f'\\version "{config.lilypond}"\n'
             # lilypond += macra
+            lilypond += extractors
+            lilypond += output
             lilypond += LY_PAPER
             lilypond += (test_dir / "expect.ly").read_text()
             lilypond += r"\bookpart { \expected }"
@@ -107,13 +114,15 @@ if __name__ == "__main__":
                 else r'\include "early/early.ly"'
             )
             early += (suite_dir / "macra.ly").read_text()
+            early += extractors
             early += LY_PAPER
             early += (test_dir / "early.ly").read_text()
+            early += output
             early += r"\bookpart { \actual }" + "\n"
-            early += '#(display "SCHEME")\n'
-            early += r"\void \displayMusic \actual" + "\n"
+            # early += '#(display "SCHEME")\n'
+            # early += r"\void \displayMusic \actual" + "\n"
             early += '#(display "MEI")\n'
-            early += r"%(# ly->mei test)"  # uncheck when ready.
+            early += r"%(# ly->mei actual)"  # uncheck when ready.
 
             early_cmd = [
                 "lilypond",
@@ -137,6 +146,15 @@ if __name__ == "__main__":
 
             scm_actual, mei_actual = early_out.stdout.decode("utf-8").split("\n\n")
 
+            """Remove all non-scheme content"""
+            scm_actual = "\n".join(
+                [
+                    line
+                    for line in scm_actual.splitlines()
+                    if line.startswith(("(", " "))
+                ]
+            )
+
             ly_img = ""
             early_img = ""
             for img_dir in output_dir.iterdir():
@@ -149,8 +167,8 @@ if __name__ == "__main__":
                     early_img_path = p.Path(*img_dir.parts[1:])
                     early_img += f'<img src="{early_img_path}" width="250">\n'
 
-            test = TestCase()
-            test.add("lilypond", ly_img, early_img)
+            test = TestCase(suite_name, test_name)
+            test.add("lilypond", ly_img, early_img, unittest_ignore=True)
             test.add(
                 "scheme",
                 scm_expected,
@@ -158,10 +176,12 @@ if __name__ == "__main__":
                 format=["code", "pre"],
             )
             # test.add("verovio", img, img) # UNCOMMENT when ready.
-            test.add("mei", mei_expected, mei_actual)
+            test.add("mei", mei_expected, mei_actual, format=["code", "pre"])
 
             md += title
             md += test.table()
             md += "\n"
+
+            test.run()
 
     (DIR / "../report.md").write_text(md)

@@ -19,6 +19,7 @@ if __name__ == "__main__":
         config = (DIR.parent / "src/config.json").read_text()
         (suite_dir / "config.json").write_text(config)
         (suite_dir / "macra.ly").write_text("")
+        (suite_dir / "output.ly").write_text("")
 
     tests = sys.argv[2:]
 
