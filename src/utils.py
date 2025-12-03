@@ -1,3 +1,7 @@
+import pathlib as p
+import unittest
+
+
 class TestSuiteConfig:
     """
     This class represents a correct config object shape.
@@ -15,22 +19,40 @@ class Test:
     and actual test report.
     """
 
-    def __init__(self, name, expected, actual, format):
+    def __init__(
+        self,
+        name,
+        expected: p.Path | str,
+        actual: p.Path | str,
+        format,
+        unittest_ignore: bool,
+    ):
         self.name = name
-        self.expected = expected
-        self.actual = actual
+        self.expected: p.Path | str = expected
+        self.actual: p.Path | str = actual
         self.format: list[str] | None = format
+        self.unittest_ignore = unittest_ignore
+
+    def resolve(self, value: str | p.Path) -> str:
+        return value.read_text() if type(value) is p.Path else value
 
     def result(self):
-        passed = self.expected == self.actual
+        passed = self.resolve(self.expected) == self.resolve(self.actual)
         return f"{'✅' if passed else '⭕'} {self.name}"
 
+    def comparison(self) -> tuple:
+        return self.resolve(self.expected), self.resolve(self.actual)
+
     def wrap(self, value: str):
+        """
+        Wraps the value within tags
+        provided in self.format.
+        """
         if not self.format:
-            return value
+            return str(value)
         result = (
             "".join([f"<{f}>" for f in self.format])
-            + value
+            + str(value)
             + "".join([f"</{f}>" for f in reversed(self.format)])
         )
         return result
@@ -51,11 +73,20 @@ class TestCase:
     as a markdown table with links to generated images.
     """
 
-    def __init__(self):
+    def __init__(self, suite_name: str, test_name: str):
+        self.suite_name = suite_name
+        self.test_name = test_name
         self.tests: list[Test] = []
 
-    def add(self, name, expected, actual, format: list[str] | None = None) -> None:
-        test = Test(name, expected, actual, format)
+    def add(
+        self,
+        name,
+        expected,
+        actual,
+        format: list[str] | None = None,
+        unittest_ignore=False,
+    ) -> None:
+        test = Test(name, expected, actual, format, unittest_ignore)
         self.tests.append(test)
 
     def table(self) -> str:
@@ -66,3 +97,16 @@ class TestCase:
             # + f"<tr>\n{'\n'.join(['\n'.join([f'<td>{d}</td>\n' for d in test]) for test in self.tests])}\n</tr>"
             + "</table>\n"
         )
+
+    def run(self) -> None:
+        tests = {
+            f"test_{test.name}": lambda this, test=test: this.assertMultiLineEqual(
+                *test.comparison()
+            )
+            for test in self.tests
+            if not test.unittest_ignore
+        } | {"maxDiff": None}
+        suite = unittest.TestLoader().loadTestsFromTestCase(
+            type(self.test_name, (unittest.TestCase,), tests)
+        )
+        unittest.TextTestRunner(verbosity=2).run(suite)

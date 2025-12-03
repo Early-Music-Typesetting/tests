@@ -72,8 +72,8 @@ if __name__ == "__main__":
                 else ""
             )
 
-            scm_expected = (test_dir / "expect.scm").read_text() or "_no scheme_"
-            mei_expected = (test_dir / "expect.mei").read_text() or "_no mei_"
+            scm_expected = (test_dir / "expect.scm").read_text() or ""
+            mei_expected = (test_dir / "expect.mei").read_text() or ""
 
             output_ly_dir = test_dir / "output" / "ly"
             output_early_dir = test_dir / "output" / "early"
@@ -118,11 +118,17 @@ if __name__ == "__main__":
             early += LY_PAPER
             early += (test_dir / "early.ly").read_text()
             early += output
-            early += r"\bookpart { \actual }" + "\n"
-            # early += '#(display "SCHEME")\n'
+            early += '#(display "SCHEME")\n'
+            early += (
+                r"\bookpart { \actual }" + "\n"
+                if scm_expected
+                else "#(newline) #(newline)"
+            )
             # early += r"\void \displayMusic \actual" + "\n"
             early += '#(display "MEI")\n'
-            early += r"%(# ly->mei actual)"  # uncheck when ready.
+            early += (
+                r"%(# ly->mei actual)" if mei_expected else ""
+            )  # uncheck when ready.
 
             early_cmd = [
                 "lilypond",
@@ -144,7 +150,11 @@ if __name__ == "__main__":
                 )
                 ...  # handle.
 
-            scm_actual, mei_actual = early_out.stdout.decode("utf-8").split("\n\n")
+            actual = early_out.stdout.decode("utf-8").split("\n\n")
+            print(early_out.stdout.decode("utf-8"))
+            scm_actual, mei_actual = actual
+            scm_expected = scm_expected or "no scheme provided."
+            mei_expected = mei_expected or "no MEI provided."
 
             """Remove all non-scheme content"""
             scm_actual = "\n".join(
