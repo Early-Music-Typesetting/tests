@@ -1,6 +1,8 @@
 import pathlib as p
 import subprocess
 
+PREV = ""
+
 if __name__ == "__main__":
     if not p.Path("./tests/main.py").is_file():
         print("NOTE: run this script from the top directory of your Early project.")
@@ -13,7 +15,8 @@ if __name__ == "__main__":
             "* type 'test' (and optional suite and tests names) to generate a report of your test outcome."
         )
         print("* type 'quit' to exit.\n")
-        inp = input("mode: ")
+        inp = input("mode: ") or PREV
+        PREV = inp
 
         if inp.startswith("add "):
             cmd = ["python3", "./tests/src/add.py"] + inp.split(" ")[1:]
