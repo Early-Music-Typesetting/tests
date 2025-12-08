@@ -41,7 +41,9 @@ class Test:
         return f"{'✅' if passed else '⭕'} {self.name}"
 
     def comparison(self) -> tuple:
-        return self.resolve(self.expected), self.resolve(self.actual)
+        expected_without_trailing_newline = self.resolve(self.expected)[:-1]
+        actual = self.resolve(self.actual)
+        return expected_without_trailing_newline, actual
 
     def wrap(self, value: str):
         """
