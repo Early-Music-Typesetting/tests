@@ -4,16 +4,12 @@
     }
 }
 
-actual = \relative g' { \repeat unfold 30 {g} }
-
-\addlyrics {
-    am em im om um ym
-    am* em* im* om* um* ym*
-    mam mamm mam. mam, mam! mam? mam;
-    mam -- mim -- mum
-    "am mem" "am, mem!"
-    am*mem
-    "am* m*em*"
-    oru[m] or[um] orum
-    oru{m} oru{m*}
+actual =\relative g' { \repeat unfold 30 g } \addlyrics {
+    am em im om um ym % all
+    am* em* im* om* um* ym* % none
+    mam mamm mam. mam, mam! mam? mam; % all
+    mam -- mim -- mum % only 'mum'
+    "am mem" "am, mem!" % all last -m
+    "am* mem*" "am*, mem*!"
+    "mam*mem"
 }
