@@ -1,5 +1,3 @@
-\version "2.24.4"
-
 %{
     This files contains engravers allowing for
     printing specific score features.
@@ -17,6 +15,7 @@
        (set! all-lyrics
         (append! all-lyrics (list text))))))
     ((finalize translator)
-     (newline)
-     (display-scheme-music all-lyrics))
+     (display "__SCHEME_STARTS__\n")
+     (display-scheme-music all-lyrics)
+     (display "__SCHEME_ENDS__"))
 )))

@@ -1,5 +1,6 @@
 import json
 import pathlib as p
+import re
 import subprocess
 import sys
 
@@ -113,22 +114,15 @@ if __name__ == "__main__":
                 if config.early
                 else r'\include "early/early.ly"'
             )
-            early += (suite_dir / "macra.ly").read_text()
             early += extractors
-            early += LY_PAPER
+            early += (suite_dir / "macra.ly").read_text()
             early += (test_dir / "early.ly").read_text()
             early += output
-            early += '#(display "SCHEME")\n'
-            early += (
-                r"\bookpart { \actual }" + "\n"
-                if scm_expected
-                else "#(newline) #(newline)"
-            )
-            # early += r"\void \displayMusic \actual" + "\n"
-            early += '#(display "MEI")\n'
-            early += (
-                r"%(# ly->mei actual)" if mei_expected else ""
-            )  # uncheck when ready.
+            early += LY_PAPER
+            early += r"\bookpart { \actual }" if scm_expected else ""
+            # early += (
+            #     r"%(# ly->mei actual)" if mei_expected else ""
+            # )  # uncheck when ready.
 
             early_cmd = [
                 "lilypond",
@@ -144,15 +138,25 @@ if __name__ == "__main__":
                 capture_output=True,
             )
 
+            # print(early_out.stdout.decode("utf-8"))
+
             if early_out.returncode == 1:  # parsing not correct
                 raise Exception(
                     f"Could not parse Early Lilypond testing file:\n{early_out.stderr.decode('utf-8')}",
                 )
                 ...  # handle.
 
-            actual = early_out.stdout.decode("utf-8").split("\n\n")
-            print(early_out.stdout.decode("utf-8"))
-            scm_actual, mei_actual = actual
+            actual = early_out.stdout.decode("utf-8")
+            scm_actual = (
+                actual.split("__SCHEME_STARTS__\n")[1].split("__SCHEME_ENDS__")[0]
+                if "__SCHEME_STARTS__\n" in actual
+                else ""
+            )
+
+            # print(scm_actual)
+            mei_actual = re.match(
+                r"__MEI_STARTS__(.+)__MEI_ENDS__", early_out.stdout.decode("utf-8")
+            )
             scm_expected = scm_expected or "no scheme provided."
             mei_expected = mei_expected or "no MEI provided."
 
